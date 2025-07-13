@@ -109,6 +109,10 @@ async fn main(_spawner: Spawner) {
         .with_rotation(DisplayRotation::Rotate0)
         .connect_interface(async_interface);
     
+    // Debug: Check display dimensions
+    let (width, height) = display.get_dimensions();
+    println!("Display dimensions: {}x{}", width, height);
+    
     println!("Resetting display...");
     // Reset display
     display.reset_async(&mut rst).await.unwrap();
@@ -121,73 +125,90 @@ async fn main(_spawner: Spawner) {
     // Clear display asynchronously
     display.clear().await.unwrap();
     
-    println!("Drawing test pattern...");
+    println!("Drawing 4 colored quadrants to fill the entire screen...");
     
-    // Draw some test pixels
-    for x in 0..64 {
-        for y in 0..64 {
-            let color = if (x + y) % 2 == 0 { 0xF800 } else { 0x07E0 }; // Red or Green checkerboard
-            display.set_pixel(x, y, color).await.unwrap();
+    // Draw pixels directly to ensure we fill the entire 128x128 screen
+    // This approach guarantees every pixel is set correctly
+    
+    for y in 0..128 {
+        for x in 0..128 {
+            let color = if x < 64 && y < 64 {
+                0xF800 // Top-left: RED (RGB565: 11111 000000 00000)
+            } else if x >= 64 && y < 64 {
+                0x07E0 // Top-right: GREEN (RGB565: 00000 111111 00000)
+            } else if x < 64 && y >= 64 {
+                0x001F // Bottom-left: BLUE (RGB565: 00000 000000 11111)
+            } else {
+                0xFFFF // Bottom-right: WHITE (RGB565: 11111 111111 11111)
+            };
+            
+            display.set_pixel(x as u32, y as u32, color).await.unwrap();
         }
-        // Add a small delay to see the drawing progress
-        if x % 8 == 0 {
-            Timer::after_millis(10).await;
+        
+        // Add progress updates every 16 lines to see the drawing progress
+        if y % 16 == 0 {
+            println!("Drawing line {}/128", y);
+            Timer::after_millis(10).await; // Small delay to see progress
         }
     }
     
-    println!("Drawing colored rectangles...");
+    println!("Finished drawing all 16,384 pixels!");
     
-    // Draw colored rectangles using embedded-graphics
-    let red_rect = Rectangle::new(Point::new(70, 10), Size::new(50, 30))
-        .into_styled(
-            PrimitiveStyleBuilder::new()
-                .fill_color(Rgb565::RED)
-                .build(),
-        );
+    println!("Display initialization complete! Starting border animation...");
     
-    let green_rect = Rectangle::new(Point::new(70, 50), Size::new(50, 30))
-        .into_styled(
-            PrimitiveStyleBuilder::new()
-                .fill_color(Rgb565::GREEN)
-                .build(),
-        );
-    
-    let blue_rect = Rectangle::new(Point::new(70, 90), Size::new(50, 30))
-        .into_styled(
-            PrimitiveStyleBuilder::new()
-                .fill_color(Rgb565::BLUE)
-                .build(),
-        );
-    
-    // Draw rectangles (embedded-graphics calls are still sync)
-    red_rect.draw(&mut display).unwrap();
-    green_rect.draw(&mut display).unwrap();
-    blue_rect.draw(&mut display).unwrap();
-    
-    println!("Display initialization complete! Starting animation...");
-    
-    // Animation loop - moving white pixel
+    // Animation loop - moving black dot around the center borders between quadrants
     let mut frame = 0u32;
     loop {
-        // Draw a moving white pixel across the top
-        let x = (frame % 128) as u32;
-        let y = 5;
+        let cycle_length = 256; // Total animation cycle length
+        let pos = frame % cycle_length;
         
-        // Clear previous position (draw black pixel)
-        if x > 0 {
-            display.set_pixel(x - 1, y, 0x0000).await.unwrap(); // Black
+        // Calculate position along the border between quadrants
+        let (x, y) = if pos < 64 {
+            // Top border: move from center-left to center-right
+            (32 + pos, 63) // Horizontal line at y=63 (border between top and bottom)
+        } else if pos < 128 {
+            // Right border: move from center-top to center-bottom  
+            (63, 32 + (pos - 64)) // Vertical line at x=63 (border between left and right)
+        } else if pos < 192 {
+            // Bottom border: move from center-right to center-left
+            (32 + (63 - (pos - 128)), 64) // Horizontal line at y=64
         } else {
-            display.set_pixel(127, y, 0x0000).await.unwrap(); // Clear last position when wrapping
-        }
+            // Left border: move from center-bottom to center-top
+            (64, 32 + (63 - (pos - 192))) // Vertical line at x=64
+        };
         
-        // Draw white pixel at new position
-        display.set_pixel(x, y, 0xFFFF).await.unwrap(); // White
+        // Clear previous position
+        let prev_cycle = (frame.wrapping_sub(1)) % cycle_length;
+        let (prev_x, prev_y) = if prev_cycle < 64 {
+            (32 + prev_cycle, 63)
+        } else if prev_cycle < 128 {
+            (63, 32 + (prev_cycle - 64))
+        } else if prev_cycle < 192 {
+            (32 + (63 - (prev_cycle - 128)), 64)
+        } else {
+            (64, 32 + (63 - (prev_cycle - 192)))
+        };
+        
+        // Restore the original color at previous position
+        let prev_color = if prev_x < 64 && prev_y < 64 {
+            0xF800 // Red
+        } else if prev_x >= 64 && prev_y < 64 {
+            0x07E0 // Green
+        } else if prev_x < 64 && prev_y >= 64 {
+            0x001F // Blue
+        } else {
+            0xFFFF // White
+        };
+        display.set_pixel(prev_x, prev_y, prev_color).await.unwrap();
+        
+        // Draw black dot at new position
+        display.set_pixel(x, y, 0x0000).await.unwrap(); // Black dot
         
         frame = frame.wrapping_add(1);
-        Timer::after_millis(50).await;
+        Timer::after_millis(20).await;
         
-        // Print progress every second
-        if frame % 20 == 0 {
+        // Print progress every 2 seconds
+        if frame % 100 == 0 {
             println!("Animation frame: {}", frame);
         }
     }
