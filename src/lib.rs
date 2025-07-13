@@ -9,3 +9,12 @@ pub mod display;
 pub mod mode;
 pub mod prelude;
 pub mod properties;
+
+#[cfg(feature = "async")]
+pub mod async_interface;
+#[cfg(feature = "async")]
+pub mod async_display;
+#[cfg(feature = "async")]
+pub mod async_command;
+#[cfg(feature = "async")]
+pub mod async_builder;

@@ -9,6 +9,12 @@ pub mod graphics;
 pub mod displaymode;
 pub mod raw;
 
+#[cfg(feature = "async")]
+pub mod async_graphics;
+
 pub use self::graphics::GraphicsMode;
 // pub use self::terminal::TerminalMode;
 pub use self::raw::RawMode;
+
+#[cfg(feature = "async")]
+pub use self::async_graphics::AsyncGraphicsMode;

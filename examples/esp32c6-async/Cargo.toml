@@ -1,0 +1,51 @@
+[package]
+edition = "2021"
+name    = "esp32c6-ssd1351-async"
+version = "0.1.0"
+
+[features]
+default = ["debug-print"]
+debug-print = []
+
+[[bin]]
+name = "esp32c6-ssd1351-async"
+path = "./src/main.rs"
+
+[dependencies]
+esp-bootloader-esp-idf = "0.1.0"
+esp-hal                = { version = "=1.0.0-beta.1", features = ["esp32c6", "unstable"] }
+
+critical-section = "1.2.0"
+embassy-executor = { version = "0.7.0", features = ["task-arena-size-65536"] }
+embassy-time     = "0.4.0"
+esp-alloc        = "0.8.0"
+esp-hal-embassy  = { version = "0.8.1", features = ["esp32c6"] }
+esp-println      = { version = "0.14.0", features = ["esp32c6"] }
+static_cell      = "2.1.0"
+
+# SSD1351 async support
+ssd1351 = { path = "../..", features = ["async", "graphics"] }
+embedded-graphics = "0.8"
+embedded-hal = "1.0"
+embedded-hal-bus = "0.1"
+embassy-sync = "0.6"
+display-interface = "0.5"
+display-interface-spi = "0.5"
+embedded-hal-async = "1.0"
+fugit = "0.3.7"
+
+[profile.dev]
+# Rust debug is too slow.
+# For debug builds always builds with some optimization
+opt-level = "s"
+
+[profile.release]
+codegen-units    = 1     # LLVM can perform better optimizations using a single thread
+debug            = 2
+debug-assertions = false
+incremental      = false
+lto              = 'fat'
+opt-level        = 3     # Maximum speed optimization (was 's' for size)
+overflow-checks  = false
+panic            = "abort" # Smaller code size
+strip            = true   # Remove debug symbols
