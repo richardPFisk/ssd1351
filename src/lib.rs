@@ -13,6 +13,8 @@ pub mod properties;
 #[cfg(feature = "async")]
 pub mod async_interface;
 #[cfg(feature = "async")]
+pub mod async_spi_interface;
+#[cfg(feature = "async")]
 pub mod async_display;
 #[cfg(feature = "async")]
 pub mod async_command;
