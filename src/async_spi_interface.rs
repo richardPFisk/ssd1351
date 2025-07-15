@@ -34,27 +34,27 @@ where
             DataFormat::U16(data) => {
                 // Convert u16 data to bytes and send
                 let mut buffer = [0u8; 2];
-                for &word in data {
-                    buffer[0] = (word >> 8) as u8;
-                    buffer[1] = (word & 0xFF) as u8;
+                for word in data {
+                    buffer[0] = (*word >> 8) as u8;
+                    buffer[1] = (*word & 0xFF) as u8;
                     self.spi.write(&buffer).await.map_err(|_| DisplayError::BusWriteError)?;
                 }
             }
             DataFormat::U16BE(data) => {
                 // Big-endian u16 data
                 let mut buffer = [0u8; 2];
-                for &word in data {
-                    buffer[0] = (word >> 8) as u8;
-                    buffer[1] = (word & 0xFF) as u8;
+                for word in data {
+                    buffer[0] = (*word >> 8) as u8;
+                    buffer[1] = (*word & 0xFF) as u8;
                     self.spi.write(&buffer).await.map_err(|_| DisplayError::BusWriteError)?;
                 }
             }
             DataFormat::U16LE(data) => {
                 // Little-endian u16 data
                 let mut buffer = [0u8; 2];
-                for &word in data {
-                    buffer[0] = (word & 0xFF) as u8;
-                    buffer[1] = (word >> 8) as u8;
+                for word in data {
+                    buffer[0] = (*word & 0xFF) as u8;
+                    buffer[1] = (*word >> 8) as u8;
                     self.spi.write(&buffer).await.map_err(|_| DisplayError::BusWriteError)?;
                 }
             }
@@ -64,7 +64,7 @@ where
                 let mut count = 0;
                 
                 for byte in iter {
-                    buffer[count] = *byte;
+                    buffer[count] = byte;
                     count += 1;
                     
                     if count == buffer.len() {
@@ -83,8 +83,8 @@ where
                 let mut count = 0;
                 
                 for word in iter {
-                    buffer[count] = (*word >> 8) as u8;
-                    buffer[count + 1] = (*word & 0xFF) as u8;
+                    buffer[count] = (word >> 8) as u8;
+                    buffer[count + 1] = (word & 0xFF) as u8;
                     count += 2;
                     
                     if count == buffer.len() {
@@ -103,8 +103,8 @@ where
                 let mut count = 0;
                 
                 for word in iter {
-                    buffer[count] = (*word & 0xFF) as u8;
-                    buffer[count + 1] = (*word >> 8) as u8;
+                    buffer[count] = (word & 0xFF) as u8;
+                    buffer[count + 1] = (word >> 8) as u8;
                     count += 2;
                     
                     if count == buffer.len() {
@@ -117,6 +117,10 @@ where
                 if count > 0 {
                     self.spi.write(&buffer[..count]).await.map_err(|_| DisplayError::BusWriteError)?;
                 }
+            }
+            _ => {
+                // Handle any additional DataFormat variants
+                return Err(DisplayError::DataFormatNotImplemented);
             }
         }
         
@@ -134,25 +138,25 @@ where
             }
             DataFormat::U16(data) => {
                 let mut buffer = [0u8; 2];
-                for &word in data {
-                    buffer[0] = (word >> 8) as u8;
-                    buffer[1] = (word & 0xFF) as u8;
+                for word in data {
+                    buffer[0] = (*word >> 8) as u8;
+                    buffer[1] = (*word & 0xFF) as u8;
                     self.spi.write(&buffer).await.map_err(|_| DisplayError::BusWriteError)?;
                 }
             }
             DataFormat::U16BE(data) => {
                 let mut buffer = [0u8; 2];
-                for &word in data {
-                    buffer[0] = (word >> 8) as u8;
-                    buffer[1] = (word & 0xFF) as u8;
+                for word in data {
+                    buffer[0] = (*word >> 8) as u8;
+                    buffer[1] = (*word & 0xFF) as u8;
                     self.spi.write(&buffer).await.map_err(|_| DisplayError::BusWriteError)?;
                 }
             }
             DataFormat::U16LE(data) => {
                 let mut buffer = [0u8; 2];
-                for &word in data {
-                    buffer[0] = (word & 0xFF) as u8;
-                    buffer[1] = (word >> 8) as u8;
+                for word in data {
+                    buffer[0] = (*word & 0xFF) as u8;
+                    buffer[1] = (*word >> 8) as u8;
                     self.spi.write(&buffer).await.map_err(|_| DisplayError::BusWriteError)?;
                 }
             }
@@ -161,7 +165,7 @@ where
                 let mut count = 0;
                 
                 for byte in iter {
-                    buffer[count] = *byte;
+                    buffer[count] = byte;
                     count += 1;
                     
                     if count == buffer.len() {
@@ -179,8 +183,8 @@ where
                 let mut count = 0;
                 
                 for word in iter {
-                    buffer[count] = (*word >> 8) as u8;
-                    buffer[count + 1] = (*word & 0xFF) as u8;
+                    buffer[count] = (word >> 8) as u8;
+                    buffer[count + 1] = (word & 0xFF) as u8;
                     count += 2;
                     
                     if count == buffer.len() {
@@ -198,8 +202,8 @@ where
                 let mut count = 0;
                 
                 for word in iter {
-                    buffer[count] = (*word & 0xFF) as u8;
-                    buffer[count + 1] = (*word >> 8) as u8;
+                    buffer[count] = (word & 0xFF) as u8;
+                    buffer[count + 1] = (word >> 8) as u8;
                     count += 2;
                     
                     if count == buffer.len() {
@@ -211,6 +215,10 @@ where
                 if count > 0 {
                     self.spi.write(&buffer[..count]).await.map_err(|_| DisplayError::BusWriteError)?;
                 }
+            }
+            _ => {
+                // Handle any additional DataFormat variants
+                return Err(DisplayError::DataFormatNotImplemented);
             }
         }
         
